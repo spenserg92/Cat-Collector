@@ -1,18 +1,21 @@
 {% extends 'base.html' %}
 {% block content %}
 
-    <h1>{{cat.name}}'s Details</h1>
+    <h1>{{ cat.name }}'s Details</h1>
     <div class="card">
-        
         <div class="card-content">
-            <span class="card-title">{{cat.name}}</span>
-            <p>Breed: {{cat.breed}}</p>
-            <p>Description: {{cat.description}}</p>
+            <span class="card-title">{{ cat.name }}</span>
+            <p>Breed: {{ cat.breed }}</p>
+            <p>Description: {{ cat.description }}</p>
             {% if cat.age > 0 %}
-                <p>Age: {{cat.age}}</p>
+                <p>Age: {{ cat.age }}</p>
             {% else %}
-                <p>Age: kitten</p>
+                <p>Age: Kitten</p>
             {% endif %}
+        </div>
+        <div class="card-action">
+            <a href="{% url 'cats_update' cat.id %}">Update</a>
+            <a href="{% url 'cats_delete' cat.id %}">Delete</a>
         </div>
     </div>
 
