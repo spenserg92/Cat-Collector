@@ -41,7 +41,7 @@ class CatCreate(CreateView):
     # this view creates a form
     fields = '__all__'
     # We can add other options inside this view
-    success_url = '/cats/{cat_id}'
+    success_url = '/cats/'
 
 # Update View
 
