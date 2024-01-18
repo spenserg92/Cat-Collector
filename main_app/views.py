@@ -1,12 +1,13 @@
-from django.forms.models import BaseModelForm
-from django.http import HttpResponse
+import uuid
+import boto3
+import os
 from django.shortcuts import render, redirect
 # importing our Class-Based-Views (CBVs)
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 
-from .models import Cat, Toy
+from .models import Cat, Toy, Photo
 from .forms import FeedingForm
 # Add this cats list below the imports
 # this was to build our inital view - now we have cats in the db
@@ -129,3 +130,22 @@ def unassoc_toy(request, cat_id, toy_id):
     # we target the cat and pass it the toy id
     Cat.objects.get(id=cat_id).toys.remove(toy_id)
     return redirect('detail', cat_id=cat_id)
+
+def add_photo(request, cat_id):
+    #photo-file will be the "name" attribute
+    photo_file = request.FILES.get('photo-file', None)
+    if photo_file:
+        s3 = boto3.client('s3')
+        # need a unique key for s3 / needs image file extension too
+        key = uuid.uuid4().hex[:6] + photo_file.name[photo_file.name.rfind('.'):]
+        try:
+            bucket = os.environ['S3_BUCKET']
+            s3.upload_fileobj(photo_file, bucket, key)
+            # build the full url string
+            url = f"{os.environ['S3_BASE_URL']}{bucket}/{key}"
+            # we can assign to cat_id or cat (if you have a cat object)
+            Photo.objects.create(url=url, cat_id=cat_id)
+        except Exception as e:
+            print('An error occurred uploading file to S3')
+            print(e)
+    return redirect('detail', cat_id=cat_id)        
