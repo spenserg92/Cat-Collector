@@ -1,8 +1,12 @@
+from django.forms.models import BaseModelForm
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
 # importing our Class-Based-Views (CBVs)
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic import ListView
+from django.views.generic.detail import DetailView
 
-from .models import Cat
+from .models import Cat, Toy
 from .forms import FeedingForm
 # Add this cats list below the imports
 # this was to build our inital view - now we have cats in the db
@@ -40,10 +44,16 @@ def cats_index(request):
 def cats_detail(request, cat_id):
     # find one cat with its id
     cat = Cat.objects.get(id=cat_id)
+    # here we'll get a value list of the toy ids assoctiated with the cat
+    id_list = cat.toys.all().values_list('id')
     # instantiate FeedingForm to be rendered in our template
+    # for all toys cat doesn't have
+    toys_cat_doesnt_have = Toy.objects.exclude(id__in=id_list)
     feeding_form = FeedingForm()
+    
 
-    return render(request, 'cats/detail.html', { 'cat': cat, 'feeding_form': feeding_form })
+    return render(request, 'cats/detail.html', { 'cat': cat, 'feeding_form': feeding_form, 'toys': toys_cat_doesnt_have})
+
 
 # inherit from the CBV - CreateView, to make our cats create view
 class CatCreate(CreateView):
@@ -81,4 +91,41 @@ def add_feeding(request, cat_id):
         new_feeding.cat_id = cat_id
         new_feeding.save()
     # finally, redirect to the cat detail page
+    return redirect('detail', cat_id=cat_id)
+
+# List of toy views
+# Toy list
+class ToyList(ListView):
+    model = Toy
+    template_name = 'toys/index.html'
+# Toy Detail
+class ToyDetail(DetailView):
+    model = Toy
+    template_name = 'toys/detail.html'
+
+# toy create
+class ToyCreate(CreateView):
+    model = Toy
+    fields = ['name', 'color']
+
+    def form_valid(self, form):
+        return super().form_valid(form)
+# Toy Update
+class ToyUpdate(UpdateView):
+    model = Toy
+    fields = ['name', 'color']
+# Toy Delete
+class ToyDelete(DeleteView):
+    model = Toy
+    success_url = '/toys'
+
+# add and remove toys from cats
+def assoc_toy(request, cat_id, toy_id):
+    # we target the cat and pass it the toy id
+    Cat.objects.get(id=cat_id).toys.add(toy_id)
+    return redirect('detail', cat_id=cat_id)
+
+def unassoc_toy(request, cat_id, toy_id):
+    # we target the cat and pass it the toy id
+    Cat.objects.get(id=cat_id).toys.remove(toy_id)
     return redirect('detail', cat_id=cat_id)
